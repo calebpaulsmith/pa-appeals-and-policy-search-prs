@@ -825,6 +825,19 @@ body {
   background: var(--danger-soft);
   color: var(--danger) !important;
 }
+.admin-note {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+.admin-note code {
+  font-family: var(--mono);
+  background: var(--accent-soft);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--accent-ink);
+}
 
 /* ---- Reader -------------------------------------------------------------- */
 .reader {

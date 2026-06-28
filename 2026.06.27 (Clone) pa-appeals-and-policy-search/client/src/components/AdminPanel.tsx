@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchAdminStats, fetchRunStatus, triggerRefresh } from "../api";
+import { fetchAdminCheck, fetchAdminStats, fetchRunStatus, triggerRefresh } from "../api";
 import type { AdminRunStatus, AdminStats } from "../types";
 
 export function AdminPanel() {
@@ -11,6 +11,7 @@ export function AdminPanel() {
   const [refreshing, setRefreshing] = useState(false);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
+  const [jobTriggerEnabled, setJobTriggerEnabled] = useState(false);
 
   const loadStats = async () => {
     setLoadingStats(true);
@@ -53,6 +54,15 @@ export function AdminPanel() {
     }
   };
 
+  // On mount: load index stats and learn whether job control is available.
+  useEffect(() => {
+    void loadStats();
+    fetchAdminCheck()
+      .then((c) => setJobTriggerEnabled(c.jobTriggerEnabled))
+      .catch(() => setJobTriggerEnabled(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (!status || !["RUNNING", "PENDING"].includes(status.lifecycleState)) return;
     const timer = window.setTimeout(() => void checkStatus(status.runId), 5000);
@@ -94,74 +104,94 @@ export function AdminPanel() {
         )}
       </div>
 
-      <div className="admin-section">
-        <div className="admin-section-head">
-          <div>
-            <h2>Manual Refresh</h2>
-            <p>Submit the existing incremental processor notebook as the calling user.</p>
+      {jobTriggerEnabled ? (
+        <>
+          <div className="admin-section">
+            <div className="admin-section-head">
+              <div>
+                <h2>Manual Refresh</h2>
+                <p>Submit the existing incremental processor notebook as the calling user.</p>
+              </div>
+              <button type="button" className="btn btn-primary" onClick={startRefresh} disabled={refreshing}>
+                {refreshing ? "Submitting..." : "Trigger Refresh"}
+              </button>
+            </div>
+            {message && <p className="admin-message">{message}</p>}
           </div>
-          <button type="button" className="btn btn-primary" onClick={startRefresh} disabled={refreshing}>
-            {refreshing ? "Submitting..." : "Trigger Refresh"}
-          </button>
-        </div>
-        {message && <p className="admin-message">{message}</p>}
-      </div>
 
-      <div className="admin-section">
-        <div className="admin-section-head">
-          <div>
-            <h2>Run Status</h2>
-            <p>Check a submitted processor run.</p>
+          <div className="admin-section">
+            <div className="admin-section-head">
+              <div>
+                <h2>Run Status</h2>
+                <p>Check a submitted processor run.</p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => void checkStatus()}
+                disabled={checking || !runId.trim()}
+              >
+                {checking ? "Checking..." : "Check Run Status"}
+              </button>
+            </div>
+            <label className="field-label" htmlFor="run-id">
+              Run ID
+            </label>
+            <input
+              id="run-id"
+              className="admin-input"
+              value={runId}
+              onChange={(event) => setRunId(event.target.value)}
+              placeholder="Paste a run ID"
+            />
+            {status && (
+              <dl className="admin-grid admin-grid-status">
+                <div>
+                  <dt>Run ID</dt>
+                  <dd>{status.runId}</dd>
+                </div>
+                <div>
+                  <dt>Status</dt>
+                  <dd>{status.statusLabel}</dd>
+                </div>
+                <div>
+                  <dt>Lifecycle</dt>
+                  <dd>{status.lifecycleState}</dd>
+                </div>
+                <div>
+                  <dt>Result</dt>
+                  <dd>{status.resultState || "In progress"}</dd>
+                </div>
+                <div>
+                  <dt>Started</dt>
+                  <dd>{status.startTime}</dd>
+                </div>
+                <div>
+                  <dt>Ended</dt>
+                  <dd>{status.endTime}</dd>
+                </div>
+              </dl>
+            )}
+            {status?.errorMessage && <p className="admin-error">{status.errorMessage}</p>}
           </div>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => void checkStatus()}
-            disabled={checking || !runId.trim()}
-          >
-            {checking ? "Checking..." : "Check Run Status"}
-          </button>
+        </>
+      ) : (
+        <div className="admin-section">
+          <div className="admin-section-head">
+            <div>
+              <h2>Indexing</h2>
+              <p>How new documents become searchable.</p>
+            </div>
+          </div>
+          <p className="admin-note">
+            New PDFs are indexed automatically by the scheduled processor pipeline
+            (Power&nbsp;Automate&nbsp;→ Unity Catalog volume → processor notebook). In-app job
+            control is turned off because the app&rsquo;s token does not have the Databricks{" "}
+            <code>jobs</code> scope. To run the processor on demand, use a scheduled Databricks
+            Workflow or run the notebook in the workspace.
+          </p>
         </div>
-        <label className="field-label" htmlFor="run-id">
-          Run ID
-        </label>
-        <input
-          id="run-id"
-          className="admin-input"
-          value={runId}
-          onChange={(event) => setRunId(event.target.value)}
-          placeholder="Paste a run ID"
-        />
-        {status && (
-          <dl className="admin-grid admin-grid-status">
-            <div>
-              <dt>Run ID</dt>
-              <dd>{status.runId}</dd>
-            </div>
-            <div>
-              <dt>Status</dt>
-              <dd>{status.statusLabel}</dd>
-            </div>
-            <div>
-              <dt>Lifecycle</dt>
-              <dd>{status.lifecycleState}</dd>
-            </div>
-            <div>
-              <dt>Result</dt>
-              <dd>{status.resultState || "In progress"}</dd>
-            </div>
-            <div>
-              <dt>Started</dt>
-              <dd>{status.startTime}</dd>
-            </div>
-            <div>
-              <dt>Ended</dt>
-              <dd>{status.endTime}</dd>
-            </div>
-          </dl>
-        )}
-        {status?.errorMessage && <p className="admin-error">{status.errorMessage}</p>}
-      </div>
+      )}
 
       {error && (
         <div className="results-error" role="alert">

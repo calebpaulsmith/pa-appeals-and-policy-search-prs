@@ -146,11 +146,19 @@ app.post("/api/semantic-search", async (req: Request, res: Response) => {
   }
 });
 
-// Admin access check — called by the frontend to decide whether to show the Admin tab.
+// Admin access check — called by the frontend to decide whether to show the Admin
+// tab and which admin capabilities are available.
 app.get("/api/admin/check", async (req: Request, res: Response) => {
   const allowed = await isCallerAdmin(forwardedUserToken(req), config);
-  res.json({ admin: allowed });
+  res.json({ admin: allowed, jobTriggerEnabled: config.enableJobTrigger });
 });
+
+const JOB_TRIGGER_DISABLED = {
+  error: "In-app job control is disabled.",
+  detail:
+    "The app's token does not have the Databricks 'jobs' scope. Indexing runs " +
+    "via the scheduled processor pipeline (Power Automate → volume → notebook).",
+};
 
 // All remaining admin routes require the caller to be in the ADMIN_USERS list.
 const adminGate = requireAdmin(config);
@@ -164,6 +172,7 @@ app.get("/api/admin/stats", adminGate, async (req: Request, res: Response) => {
 });
 
 app.post("/api/admin/refresh", adminGate, async (req: Request, res: Response) => {
+  if (!config.enableJobTrigger) return res.status(409).json(JOB_TRIGGER_DISABLED);
   try {
     res.json(await triggerRefresh(forwardedUserToken(req), config));
   } catch (err) {
@@ -172,6 +181,7 @@ app.post("/api/admin/refresh", adminGate, async (req: Request, res: Response) =>
 });
 
 app.get("/api/admin/status/:runId", adminGate, async (req: Request, res: Response) => {
+  if (!config.enableJobTrigger) return res.status(409).json(JOB_TRIGGER_DISABLED);
   try {
     res.json(await fetchRunStatus(req.params.runId, forwardedUserToken(req), config));
   } catch (err) {

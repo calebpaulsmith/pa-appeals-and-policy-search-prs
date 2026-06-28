@@ -35,6 +35,10 @@ export interface AppConfig {
   hasWarehouse: boolean;
   // Admin access control
   adminUsers: string[]; // Lowercase email addresses allowed to use admin routes
+  // Whether the app may trigger/inspect Databricks Jobs. Off by default because
+  // the forwarded user token usually lacks the `jobs` OAuth scope; ingestion is
+  // expected to run via a scheduled processor pipeline instead.
+  enableJobTrigger: boolean;
   // hard caps
   maxCandidatePages: number;
   maxResults: number;
@@ -154,6 +158,7 @@ export function getConfig(): AppConfig {
     processorNotebookPath,
     hasWarehouse,
     adminUsers,
+    enableJobTrigger: (process.env.ENABLE_JOB_TRIGGER || "").trim().toLowerCase() === "true",
     maxCandidatePages: Number(process.env.MAX_CANDIDATE_PAGES || 2000),
     maxResults: Number(process.env.MAX_RESULTS || 100),
   };
