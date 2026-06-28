@@ -241,3 +241,104 @@ Add governed PDF corpus onboarding
 - Deterministic and semantic search both work against the new corpus.
 - Index status is visible and understandable to non-engineers.
 - Tests cover parser/search changes and path-safety behavior.
+
+---
+
+# FEMA Advanced Search — Implementation Plan (2026-06)
+
+The product is being reworked from "Appeals & Policy Research" into a polished,
+FEMA-branded **FEMA Advanced Search** tool. This section is the living plan.
+
+## Locked product decisions
+
+- **Name:** `FEMA Advanced Search`. Page title, header, subtitle all use it.
+- **Search modes:** keep the wording **Deterministic** and **Semantic** (not
+  "Exact words / By meaning"). Westlaw-style operators (exact phrase, AND/OR/NOT,
+  NEAR/ONEAR, wildcard, ATLEAST) stay gated behind an **Advanced search**
+  disclosure, shown only in Deterministic mode.
+- **Corpus model:** **one corpus now, config-driven**. A corpus = display name →
+  chunks table (+ volume). Selector/ledger built to support many; ships with the
+  single FEMA PA Second Appeals corpus. (No `corpus_id` column needed yet.)
+- **Badge:** plain-language **wordmark** + simple magnifier glyph in DHS Blue. No
+  official FEMA seal/logo (Branding SOP: custom marks need External Affairs
+  approval). If an approved asset is provided, drop it in `FEMA Design/`.
+- **Ledger fields (Phase 4):** core file metadata only — filename, relative
+  path/folder, page count, file size, last-modified date.
+- **Disclaimer (replaces "Pilot Boundaries"):** leads with "does not make
+  eligibility determinations…"; shows "Last document added: «name» · «date»".
+
+## FEMA / DHS design system (from `FEMA Design/`)
+
+- **Palette** (decoded from `DHS Color Palette.ase`): primary **DHS Blue
+  `#005288`** (ramps incl. `#003D67`, `#002B46`, `#D6E3EC`, `#F5F8FA`); **DHS Red
+  `#C41230`**; DHS Light Blue `#0078AE`; DHS Green `#5E9732`; DHS gray/dark-gray
+  scales. Tokens live in `client/src/styles.css :root`.
+- **Typography:** **Merriweather** (DHS standard serif, SIL OFL) for headings,
+  self-hosted from `/fonts` (no external CDN, keeps CSP `'self'`). Body = system
+  sans (Public Sans fallback).
+- **Accessibility:** Section 508 — maintain contrast, focus states, semantic HTML.
+
+## Phased delivery
+
+- **Phase 1 — FEMA design system + chrome** (DONE): rename, palette, Merriweather,
+  wordmark, Deterministic/Semantic labels, Disclaimer + `GET /api/last-upload`.
+- **Phase 2 — Usage counter**: Deterministic/Semantic search totals since a start
+  date, shown small at the bottom. **Stored as JSON in a Volume** (not a table):
+  `tws_ro_region5.rcd.advanced_search_data`. App service principal needs WRITE.
+- **Phase 3 — Corpus selector**: multi-select (checkmarks) filtering both search
+  modes; results show corpus name. Config-driven corpora.
+- **Phase 4 — Ledger tab**: per-corpus file list (not chunks) from the chunks
+  table joined with the volume listing; each row opens its source PDF in the
+  viewer, which is shown only when a file is selected.
+- **Future (not now)**: translate corpus content to Spanish. Keep the data model
+  translation-ready (a `language` dimension) for a clean future add.
+
+## Permissions & identity model (IMPORTANT — see 2026-06 findings)
+
+A Databricks App has **two identities**; getting features working means granting
+the right one:
+
+1. **App service principal (SP)** — configured under the app's **Resources**.
+   Used for the app's own backend work and all **filesystem Volume reads/writes**
+   (PDF preview, last-upload scan, the usage counter). Needs Unity Catalog grants.
+2. **Forwarded user token** (`X-Forwarded-Access-Token`, OBO) — scopes configured
+   under the app's **User authorization**. Used by code that forwards the caller's
+   token (semantic search, admin Jobs calls). Per the Critical Engineering Rules,
+   keep forwarding this token; do not substitute a static PAT.
+
+### Grants the app SP needs
+
+A Unity Catalog admin/owner of `tws_ro_region5` must grant these — the app owner
+currently lacks `MANAGE` on the catalog:
+
+- `USE CATALOG` on `tws_ro_region5`
+- `USE SCHEMA` on `tws_ro_region5.rcd`
+- `SELECT` on the chunks table(s) used for search
+- `READ VOLUME` on `tws_ro_region5.rcd.pa_second_appeals` (preview / ledger / last-upload)
+- `READ VOLUME` **and** `WRITE VOLUME` on `tws_ro_region5.rcd.advanced_search_data` (counter)
+- Symptom if missing: "all account users lack USE CATALOG … user does not have
+  MANAGE on the catalog to grant it to the app's service principal."
+
+### User-authorization scopes the forwarded token needs
+
+In app settings → User authorization → Add scope, then redeploy and re-consent:
+
+- `sql`, `catalog.catalogs:read`, `catalog.schemas:read`, `catalog.tables:read`,
+  `vector-search` — for SQL + semantic search.
+- **`jobs`** — required for the Admin **Trigger Refresh** (jobs/runs/submit).
+  Symptom if missing: `403 "Provided OAuth token does not have required scopes:
+  jobs"`. If `jobs` is **not** an available user-authorization scope in the app
+  UI, trigger the processor job via the **app SP** instead (add the job as an app
+  resource with "Can manage run"); revisit the no-PAT rule with the owner first.
+
+### Known-good vs blocked (2026-06)
+
+- SQL / chunks read: working (SP "Can use" on `sql-warehouse` resource).
+- Volume access: blocked until the SP gets USE CATALOG/USE SCHEMA/READ VOLUME.
+- Admin refresh: 403 — forwarded token has no `jobs` scope (User authorization
+  was empty). Add the scope (or move the trigger to the SP).
+
+## PR history
+
+- #2 keyword search over chunks table · #3 chunk metadata notebook · #4 drop PAT,
+  forward token · #5 search UI redesign · #6 FEMA design system (Phase 1).
