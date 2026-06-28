@@ -37,15 +37,24 @@ export async function fetchRunStatus(runId: string): Promise<AdminRunStatus> {
   return readJson<AdminRunStatus>(res);
 }
 
-export async function checkAdminAccess(): Promise<boolean> {
+export interface AdminCheck {
+  admin: boolean;
+  jobTriggerEnabled: boolean;
+}
+
+export async function fetchAdminCheck(): Promise<AdminCheck> {
   try {
     const res = await fetch("/api/admin/check");
-    if (!res.ok) return false;
-    const data = (await res.json()) as { admin?: boolean };
-    return data.admin === true;
+    if (!res.ok) return { admin: false, jobTriggerEnabled: false };
+    const data = (await res.json()) as Partial<AdminCheck>;
+    return { admin: data.admin === true, jobTriggerEnabled: data.jobTriggerEnabled === true };
   } catch {
-    return false;
+    return { admin: false, jobTriggerEnabled: false };
   }
+}
+
+export async function checkAdminAccess(): Promise<boolean> {
+  return (await fetchAdminCheck()).admin;
 }
 
 export function pdfUrl(documentId: string): string {
