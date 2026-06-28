@@ -90,3 +90,59 @@ export function clearVolumeIndexCache(volumeRoot?: string): void {
   if (volumeRoot) cache.delete(volumeRoot);
   else cache.clear();
 }
+
+export interface NewestUpload {
+  name: string;
+  /** ISO timestamp of the file's last modification. */
+  modifiedAt: string;
+}
+
+// Cache the newest-file scan briefly so the disclaimer doesn't re-walk the
+// volume on every page load, while still reflecting new uploads within minutes.
+const NEWEST_TTL_MS = 5 * 60 * 1000;
+const newestCache = new Map<string, { value: NewestUpload | null; at: number }>();
+
+/**
+ * Find the most recently modified PDF under `volumeRoot` (the "last document
+ * uploaded"). Returns null when the volume is unconfigured/unreadable/empty.
+ */
+export function getNewestPdf(volumeRoot: string): NewestUpload | null {
+  if (!volumeRoot || !fs.existsSync(volumeRoot)) return null;
+
+  const cached = newestCache.get(volumeRoot);
+  if (cached && Date.now() - cached.at < NEWEST_TTL_MS) return cached.value;
+
+  let best: { name: string; mtime: number } | null = null;
+  let scanned = 0;
+  const stack: string[] = [volumeRoot];
+  while (stack.length > 0) {
+    if (scanned >= MAX_FILES_SCANNED) break;
+    const dir = stack.pop() as string;
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(full);
+      } else if (entry.isFile() && entry.name.toLowerCase().endsWith(".pdf")) {
+        scanned++;
+        let mtime = 0;
+        try {
+          mtime = fs.statSync(full).mtimeMs;
+        } catch {
+          continue;
+        }
+        if (!best || mtime > best.mtime) best = { name: entry.name, mtime };
+      }
+    }
+  }
+  const value: NewestUpload | null = best
+    ? { name: best.name, modifiedAt: new Date(best.mtime).toISOString() }
+    : null;
+  newestCache.set(volumeRoot, { value, at: Date.now() });
+  return value;
+}

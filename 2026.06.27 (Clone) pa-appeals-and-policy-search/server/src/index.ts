@@ -9,6 +9,7 @@ import { createSource } from "./data";
 import { runSearch } from "./search/searchService";
 import { QUERY_EXAMPLE } from "./search/queryParser";
 import { validateVolumePath } from "./pdf/pathGuard";
+import { getNewestPdf } from "./pdf/volumeIndex";
 import { runSemanticSearch } from "./semantic/vectorSearch";
 import {
   AuthError,
@@ -83,6 +84,24 @@ app.get("/api/status", async (_req: Request, res: Response) => {
       error: "Index status unavailable.",
       detail: safeMessage(err),
     });
+  }
+});
+
+// Newest PDF in the approved volume — powers the "last document added" line in
+// the disclaimer. Returns nulls in demo mode or when the volume is unreadable.
+app.get("/api/last-upload", (_req: Request, res: Response) => {
+  try {
+    if (!config.appealsVolumePath) {
+      // Demo mode: a fabricated sample consistent with the demo dataset.
+      return res.json({
+        name: "DEMO-Sample-Appeal-Decision-0003.pdf",
+        modifiedAt: "2026-06-20T00:00:00.000Z",
+      });
+    }
+    const newest = getNewestPdf(config.appealsVolumePath);
+    res.json(newest ?? { name: null, modifiedAt: null });
+  } catch {
+    res.json({ name: null, modifiedAt: null });
   }
 });
 

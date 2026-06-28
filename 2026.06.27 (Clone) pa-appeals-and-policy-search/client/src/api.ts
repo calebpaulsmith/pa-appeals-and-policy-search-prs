@@ -1,8 +1,13 @@
-import type { AdminRunStatus, AdminStats, SearchResponse, StatusResponse } from "./types";
+import type { AdminRunStatus, AdminStats, LastUpload, SearchResponse, StatusResponse } from "./types";
 
 export async function fetchStatus(): Promise<StatusResponse> {
   const res = await fetch("/api/status");
   return (await res.json()) as StatusResponse;
+}
+
+export async function fetchLastUpload(): Promise<LastUpload> {
+  const res = await fetch("/api/last-upload");
+  return (await res.json()) as LastUpload;
 }
 
 export async function fetchSearch(query: string): Promise<SearchResponse> {

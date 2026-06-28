@@ -137,11 +137,15 @@ export function App() {
       <header className="app-header">
         <div className="brand">
           <span className="brand-mark" aria-hidden>
-            PA
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="16.5" y1="16.5" x2="21" y2="21" />
+            </svg>
           </span>
           <div>
-            <h1>Appeals &amp; Policy Research</h1>
-            <p className="subtitle">Internal page-level research over governed FEMA appeal and policy PDFs</p>
+            <h1>FEMA Advanced Search</h1>
+            <p className="subtitle">Search appeal and policy documents across governed FEMA corpora</p>
           </div>
         </div>
         <StatusBar status={status} />
@@ -173,8 +177,6 @@ export function App() {
               query={query}
               searching={searching}
               mode={mode}
-              example={status?.queryExample}
-              boundaries={status?.boundaries}
               onModeChange={setMode}
               onSubmit={handleSubmit}
               onClear={handleClear}
