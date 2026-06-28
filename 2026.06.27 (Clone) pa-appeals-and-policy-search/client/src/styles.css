@@ -1,22 +1,51 @@
+/* Merriweather — DHS/FEMA standard serif (SIL OFL 1.1, see /fonts/OFL.txt). */
+@font-face {
+  font-family: "Merriweather";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/Merriweather-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Merriweather";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/Merriweather-Bold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Merriweather";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url("/fonts/Merriweather-Black.ttf") format("truetype");
+}
+
+/* Palette = DHS/FEMA standard (decoded from the DHS Color Palette swatches). */
 :root {
-  --bg: #f4f5f7;
+  --bg: #f5f8fa; /* DHS Blue 10 */
   --panel: #ffffff;
-  --ink: #1c2430;
-  --ink-soft: #56616f;
-  --ink-faint: #8b95a3;
-  --line: #e2e6ec;
-  --line-strong: #cdd4dd;
-  --accent: #1f3a5f;
-  --accent-soft: #eaf0f7;
-  --accent-ink: #2b5388;
+  --ink: #1b1f23; /* near DHS Gray 80 */
+  --ink-soft: #5a5b5d; /* DHS Dark Gray */
+  --ink-faint: #828284; /* DHS Dark Gray 40 */
+  --line: #dedfe0; /* DHS Gray 30 */
+  --line-strong: #c0c2c4; /* DHS Gray */
+  --accent: #005288; /* DHS Blue */
+  --accent-soft: #d6e3ec; /* DHS Blue 15 */
+  --accent-ink: #003d67; /* DHS Blue 60 */
+  --accent-deep: #002b46; /* DHS Blue 70 */
+  --light-blue: #0078ae; /* DHS Light Blue */
+  --success: #5e9732; /* DHS Green */
+  --success-deep: #477326; /* DHS Green 60 */
   --hl: #ffe89a;
   --hl-active: #ffc94d;
-  --danger: #9a2c2c;
-  --danger-soft: #fbecec;
+  --danger: #c41230; /* DHS Red */
+  --danger-soft: #f6d9de; /* DHS Red 15 */
   --radius: 10px;
-  --shadow: 0 1px 2px rgba(20, 30, 45, 0.06), 0 4px 14px rgba(20, 30, 45, 0.05);
+  --shadow: 0 1px 2px rgba(0, 43, 70, 0.06), 0 4px 14px rgba(0, 43, 70, 0.06);
   --mono: "SFMono-Regular", "JetBrains Mono", Consolas, "Liberation Mono", monospace;
-  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --sans: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --serif: "Merriweather", Georgia, "Times New Roman", serif;
 }
 
 * {
@@ -64,22 +93,31 @@ body {
 .brand-mark {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
-  font-size: 22px;
-  font-weight: 600;
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.brand-mark svg {
+  width: 22px;
+  height: 22px;
+  display: block;
 }
 .app-header h1 {
-  font-size: 16px;
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 700;
   margin: 0;
   letter-spacing: 0.2px;
 }
 .subtitle {
-  margin: 1px 0 0;
+  margin: 2px 0 0;
   font-size: 12px;
-  color: #b9c6d8;
+  color: #cddcea;
+}
+.admin-section h2 {
+  font-family: var(--serif);
 }
 
 /* ---- Status bar ---------------------------------------------------------- */
@@ -474,14 +512,15 @@ body {
   color: var(--accent-ink);
 }
 
-/* ---- Pilot boundaries ---------------------------------------------------- */
-.boundaries {
-  border: 1px solid #d7e0d9;
-  background: #f1f6f1;
+/* ---- Disclaimer ---------------------------------------------------------- */
+.disclaimer {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  background: #fff;
   border-radius: var(--radius);
   padding: 12px 14px;
 }
-.boundaries-title {
+.disclaimer-title {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -489,12 +528,23 @@ body {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #2f6b45;
+  color: var(--accent-ink);
 }
-.boundaries p {
+.disclaimer p {
   margin: 8px 0 0;
   font-size: 12px;
-  color: #3c4a3f;
+  color: var(--ink-soft);
+}
+.disclaimer-upload {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 11.5px;
+  color: var(--ink-faint);
+}
+.disclaimer-upload strong {
+  color: var(--ink-soft);
+  font-weight: 600;
 }
 .lock {
   font-size: 14px;

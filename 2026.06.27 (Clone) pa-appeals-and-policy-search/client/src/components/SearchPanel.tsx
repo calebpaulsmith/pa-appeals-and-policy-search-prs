@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import type { SearchMode } from "../types";
 import { AdvancedHelp } from "./AdvancedHelp";
-import { PilotBoundaries } from "./PilotBoundaries";
+import { Disclaimer } from "./Disclaimer";
 
 const HISTORY_KEY = "pa-search-history";
 const MAX_HISTORY = 20;
@@ -10,8 +10,6 @@ interface Props {
   query: string;
   searching: boolean;
   mode: SearchMode;
-  example?: string;
-  boundaries?: string;
   onModeChange: (mode: SearchMode) => void;
   onSubmit: (q: string, mode: SearchMode) => void;
   onClear: () => void;
@@ -20,12 +18,12 @@ interface Props {
 const MODES: Array<{ id: SearchMode; label: string; hint: string }> = [
   {
     id: "deterministic",
-    label: "Exact words",
+    label: "Deterministic",
     hint: "Finds your exact terms. Supports quotes, AND/OR/NOT, wildcards, and proximity.",
   },
   {
     id: "semantic",
-    label: "By meaning",
+    label: "Semantic",
     hint: "Finds passages about the same idea, even when the wording differs.",
   },
 ];
@@ -34,7 +32,6 @@ export function SearchPanel({
   query,
   searching,
   mode,
-  boundaries,
   onModeChange,
   onSubmit,
   onClear,
@@ -194,7 +191,7 @@ export function SearchPanel({
         )}
       </form>
 
-      <PilotBoundaries boundaries={boundaries} />
+      <Disclaimer />
     </div>
   );
 }

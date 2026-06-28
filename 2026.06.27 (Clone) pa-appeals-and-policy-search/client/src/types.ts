@@ -54,6 +54,11 @@ export interface StatusResponse {
   error?: string;
 }
 
+export interface LastUpload {
+  name: string | null;
+  modifiedAt: string | null;
+}
+
 export interface AdminStats {
   indexedRowCount: number | string;
   ready: boolean;
