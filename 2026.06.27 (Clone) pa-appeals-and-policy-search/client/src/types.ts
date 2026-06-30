@@ -4,6 +4,11 @@ export type MatchType = "phrase" | "proximity" | "boolean" | "term" | "semantic"
 
 export type SearchMode = "deterministic" | "semantic";
 
+export interface Corpus {
+  id: string;
+  displayName: string;
+}
+
 export interface SnippetSegment {
   text: string;
   highlight: boolean;
@@ -19,6 +24,8 @@ export interface SearchResult {
   snippet: SnippetSegment[];
   highlightTerms: string[];
   matchExplanation: string;
+  corpusId?: string;
+  corpusDisplayName?: string;
 }
 
 export interface SearchResponse {

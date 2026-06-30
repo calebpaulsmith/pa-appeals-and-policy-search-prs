@@ -1032,3 +1032,57 @@ body {
     padding: 0 12px;
   }
 }
+
+/* ── Corpus selector ─────────────────────────────────────── */
+.corpus-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 10px 0 4px;
+}
+.corpus-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted, #666);
+  margin-right: 2px;
+  white-space: nowrap;
+}
+.corpus-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border, #d0d0d0);
+  background: var(--surface, #fff);
+  color: var(--fg, #1a1a1a);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.corpus-pill:hover {
+  border-color: var(--accent, #005288);
+  color: var(--accent, #005288);
+}
+.corpus-pill--active {
+  background: var(--accent, #005288);
+  border-color: var(--accent, #005288);
+  color: #fff;
+}
+.corpus-pill--active:hover {
+  color: #fff;
+}
+.corpus-selector--single .corpus-pill {
+  cursor: default;
+  pointer-events: none;
+}
+
+.tag-corpus {
+  background: #e8f0f7;
+  color: #005288;
+  border: 1px solid #c0d4e6;
+}

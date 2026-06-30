@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import type { SearchMode } from "../types";
+import type { Corpus, SearchMode } from "../types";
 import { AdvancedHelp } from "./AdvancedHelp";
+import { CorpusSelector } from "./CorpusSelector";
 import { Disclaimer } from "./Disclaimer";
 
 const HISTORY_KEY = "pa-search-history";
@@ -10,6 +11,9 @@ interface Props {
   query: string;
   searching: boolean;
   mode: SearchMode;
+  corpora: Corpus[];
+  selectedCorpus: string;
+  onCorpusChange: (id: string) => void;
   onModeChange: (mode: SearchMode) => void;
   onSubmit: (q: string, mode: SearchMode) => void;
   onClear: () => void;
@@ -32,6 +36,9 @@ export function SearchPanel({
   query,
   searching,
   mode,
+  corpora,
+  selectedCorpus,
+  onCorpusChange,
   onModeChange,
   onSubmit,
   onClear,
@@ -117,6 +124,12 @@ export function SearchPanel({
           ))}
         </div>
         {activeHint && <p className="mode-hint">{activeHint}</p>}
+
+        <CorpusSelector
+          corpora={corpora}
+          selected={selectedCorpus}
+          onChange={onCorpusChange}
+        />
 
         <div className="query-wrap">
           <textarea

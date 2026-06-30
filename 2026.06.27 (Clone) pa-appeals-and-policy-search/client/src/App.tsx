@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { checkAdminAccess, fetchSearch, fetchSemanticSearch, fetchStatus } from "./api";
-import type { SearchMode, SearchResponse, SearchResult, StatusResponse } from "./types";
+import {
+  checkAdminAccess,
+  fetchCorpora,
+  fetchSearch,
+  fetchSemanticSearch,
+  fetchStatus,
+} from "./api";
+import type { Corpus, SearchMode, SearchResponse, SearchResult, StatusResponse } from "./types";
 import { SearchPanel } from "./components/SearchPanel";
 import { ResultsList } from "./components/ResultsList";
 import { PdfReader } from "./components/PdfReader";
@@ -48,6 +54,8 @@ export function App() {
   const [query, setQuery] = useState(initial.current.q);
   const [response, setResponse] = useState<SearchResponse | null>(null);
   const [searching, setSearching] = useState(false);
+  const [corpora, setCorpora] = useState<Corpus[]>([]);
+  const [selectedCorpus, setSelectedCorpus] = useState<string>("all");
   const [selection, setSelection] = useState<Selection | null>(
     initial.current.doc
       ? {
@@ -63,44 +71,51 @@ export function App() {
     fetchStatus()
       .then(setStatus)
       .catch(() => setStatus(null));
-    // Only surface the Admin tab to callers the server recognizes as admins.
     checkAdminAccess()
       .then(setIsAdmin)
       .catch(() => setIsAdmin(false));
+    fetchCorpora()
+      .then((list) => {
+        setCorpora(list);
+        if (list.length === 1) setSelectedCorpus(list[0].id);
+      })
+      .catch(() => setCorpora([]));
   }, []);
 
-  // If admin access is lost (or never granted), never strand the user on Admin.
   useEffect(() => {
     if (!isAdmin && activeTab === "admin") setActiveTab("search");
   }, [isAdmin, activeTab]);
 
-  const runSearch = useCallback(async (q: string, selectedMode: SearchMode) => {
-    const trimmed = q.trim();
-    if (!trimmed) return;
-    setSearching(true);
-    setSelection(null);
-    try {
-      const res =
-        selectedMode === "semantic"
-          ? await fetchSemanticSearch(trimmed)
-          : await fetchSearch(trimmed);
-      setResponse(res);
-    } catch {
-      setResponse({
-        ok: false,
-        error: "Could not reach the search service.",
-        query: trimmed,
-        results: [],
-        candidatesScanned: 0,
-        truncated: false,
-      });
-    } finally {
-      setSearching(false);
-    }
-  }, []);
+  const runSearch = useCallback(
+    async (q: string, selectedMode: SearchMode, corpusId: string) => {
+      const trimmed = q.trim();
+      if (!trimmed) return;
+      setSearching(true);
+      setSelection(null);
+      try {
+        const res =
+          selectedMode === "semantic"
+            ? await fetchSemanticSearch(trimmed, 10, corpusId)
+            : await fetchSearch(trimmed, corpusId);
+        setResponse(res);
+      } catch {
+        setResponse({
+          ok: false,
+          error: "Could not reach the search service.",
+          query: trimmed,
+          results: [],
+          candidatesScanned: 0,
+          truncated: false,
+        });
+      } finally {
+        setSearching(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
-    if (initial.current.q) void runSearch(initial.current.q, "deterministic");
+    if (initial.current.q) void runSearch(initial.current.q, "deterministic", selectedCorpus);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -112,9 +127,19 @@ export function App() {
     (q: string, selectedMode: SearchMode) => {
       setQuery(q);
       setMode(selectedMode);
-      void runSearch(q, selectedMode);
+      void runSearch(q, selectedMode, selectedCorpus);
     },
-    [runSearch]
+    [runSearch, selectedCorpus]
+  );
+
+  const handleCorpusChange = useCallback(
+    (id: string) => {
+      setSelectedCorpus(id);
+      if (query.trim()) {
+        void runSearch(query, mode, id);
+      }
+    },
+    [query, mode, runSearch]
   );
 
   const handleClear = useCallback(() => {
@@ -177,6 +202,9 @@ export function App() {
               query={query}
               searching={searching}
               mode={mode}
+              corpora={corpora}
+              selectedCorpus={selectedCorpus}
+              onCorpusChange={handleCorpusChange}
               onModeChange={setMode}
               onSubmit={handleSubmit}
               onClear={handleClear}

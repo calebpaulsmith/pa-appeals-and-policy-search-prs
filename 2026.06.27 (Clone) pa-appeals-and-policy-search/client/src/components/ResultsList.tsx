@@ -84,8 +84,8 @@ export function ResultsList({
 
       {semanticOnly && (
         <p className="results-note">
-          Ranked by meaning. Opening the source PDF from a “By meaning” hit is coming soon — use
-          “Exact words” to open and highlight the page.
+          Ranked by meaning. Opening the source PDF from a Semantic hit is coming soon — use
+          Deterministic search to open and highlight the page.
         </p>
       )}
 
@@ -167,6 +167,9 @@ function ResultItem({
             <span className="tag tag-count">
               {result.matchCount} match{result.matchCount === 1 ? "" : "es"}
             </span>
+          )}
+          {result.corpusDisplayName && (
+            <span className="tag tag-corpus">{result.corpusDisplayName}</span>
           )}
         </div>
         <p className="result-snippet">

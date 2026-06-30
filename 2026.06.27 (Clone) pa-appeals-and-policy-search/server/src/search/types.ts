@@ -73,4 +73,7 @@ export interface SearchResult {
   /** Literal strings the reader should highlight on the page. */
   highlightTerms: string[];
   matchExplanation: string;
+  /** Corpus this result belongs to (populated when multiple corpora are configured). */
+  corpusId?: string;
+  corpusDisplayName?: string;
 }

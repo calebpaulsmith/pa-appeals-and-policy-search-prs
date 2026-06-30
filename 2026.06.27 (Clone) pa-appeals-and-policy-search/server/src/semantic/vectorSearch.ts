@@ -23,7 +23,8 @@ export async function runSemanticSearch(
   rawQuery: string,
   numResults: number,
   userToken: string | undefined,
-  config: AppConfig
+  config: AppConfig,
+  corpusId?: string
 ): Promise<SearchResponse> {
   const query = rawQuery.trim();
   if (!query) {
@@ -73,7 +74,11 @@ export async function runSemanticSearch(
   }
 
   const data = (await response.json()) as VectorSearchResponse;
-  const results = normalizeVectorResults(data);
+  const resolvedCorpus =
+    config.corpora.length > 1
+      ? (config.corpora.find((c) => c.id === corpusId) ?? config.corpora[0])
+      : config.corpora[0];
+  const results = normalizeVectorResults(data, config.corpora.length > 1 ? resolvedCorpus : undefined);
   return {
     ok: true,
     query,
@@ -83,7 +88,10 @@ export async function runSemanticSearch(
   };
 }
 
-function normalizeVectorResults(data: VectorSearchResponse): SearchResult[] {
+function normalizeVectorResults(
+  data: VectorSearchResponse,
+  corpus?: { id: string; displayName: string }
+): SearchResult[] {
   const columns = (data.manifest?.columns ?? [])
     .map((col) => col.name)
     .filter((name): name is string => !!name);
@@ -108,6 +116,7 @@ function normalizeVectorResults(data: VectorSearchResponse): SearchResult[] {
       snippet: snippetFromText(chunkText, 500),
       highlightTerms: [],
       matchExplanation: `Semantic match - relevance score: ${score.toFixed(3)}`,
+      ...(corpus ? { corpusId: corpus.id, corpusDisplayName: corpus.displayName } : {}),
     };
   });
 }

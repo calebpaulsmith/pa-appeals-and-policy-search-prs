@@ -1,4 +1,11 @@
-import type { AdminRunStatus, AdminStats, LastUpload, SearchResponse, StatusResponse } from "./types";
+import type {
+  AdminRunStatus,
+  AdminStats,
+  Corpus,
+  LastUpload,
+  SearchResponse,
+  StatusResponse,
+} from "./types";
 
 export async function fetchStatus(): Promise<StatusResponse> {
   const res = await fetch("/api/status");
@@ -10,19 +17,37 @@ export async function fetchLastUpload(): Promise<LastUpload> {
   return (await res.json()) as LastUpload;
 }
 
-export async function fetchSearch(query: string): Promise<SearchResponse> {
-  const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+export async function fetchCorpora(): Promise<Corpus[]> {
+  try {
+    const res = await fetch("/api/corpora");
+    if (!res.ok) return [];
+    const data = (await res.json()) as { corpora?: Corpus[] };
+    return Array.isArray(data.corpora) ? data.corpora : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchSearch(query: string, corpusId?: string): Promise<SearchResponse> {
+  const params = new URLSearchParams({ q: query });
+  if (corpusId && corpusId !== "all") params.set("corpus", corpusId);
+  const res = await fetch(`/api/search?${params.toString()}`);
   return (await res.json()) as SearchResponse;
 }
 
 export async function fetchSemanticSearch(
   query: string,
-  numResults = 10
+  numResults = 10,
+  corpusId?: string
 ): Promise<SearchResponse> {
   const res = await fetch("/api/semantic-search", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, numResults }),
+    body: JSON.stringify({
+      query,
+      numResults,
+      ...(corpusId && corpusId !== "all" ? { corpus: corpusId } : {}),
+    }),
   });
   return (await res.json()) as SearchResponse;
 }
