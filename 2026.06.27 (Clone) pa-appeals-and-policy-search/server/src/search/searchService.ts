@@ -28,7 +28,8 @@ export interface SearchResponse {
 export async function runSearch(
   rawQuery: string,
   source: IndexSource,
-  config: AppConfig
+  config: AppConfig,
+  corpusId?: string
 ): Promise<SearchResponse> {
   const parsed = parseQuery(rawQuery);
   if (!parsed.ok || !parsed.ast) {
@@ -47,6 +48,13 @@ export async function runSearch(
     parsed.positiveLiterals ?? [],
     config.maxCandidatePages
   );
+
+  // Resolve which corpus to stamp on results. Only stamp when multiple corpora
+  // are configured so single-corpus UIs stay uncluttered.
+  const resolvedCorpus =
+    config.corpora.length > 1
+      ? config.corpora.find((c) => c.id === corpusId) ?? config.corpora[0]
+      : config.corpora[0];
 
   const results: SearchResult[] = [];
   for (const page of candidates) {
@@ -68,6 +76,9 @@ export async function runSearch(
       snippet,
       highlightTerms: [...evalResult.literals],
       matchExplanation: explain(evalResult, matchType),
+      ...(config.corpora.length > 1 && resolvedCorpus
+        ? { corpusId: resolvedCorpus.id, corpusDisplayName: resolvedCorpus.displayName }
+        : {}),
     });
   }
 

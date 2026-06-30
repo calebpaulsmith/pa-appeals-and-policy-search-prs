@@ -57,6 +57,13 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
 });
 
+// Corpus list — drives the corpus selector in the UI.
+app.get("/api/corpora", (_req, res) => {
+  res.json({
+    corpora: config.corpora.map((c) => ({ id: c.id, displayName: c.displayName })),
+  });
+});
+
 app.get("/api/status", async (_req: Request, res: Response) => {
   try {
     const stats = await source.stats();
@@ -88,8 +95,9 @@ app.get("/api/status", async (_req: Request, res: Response) => {
 
 app.get("/api/search", async (req: Request, res: Response) => {
   const q = typeof req.query.q === "string" ? req.query.q : "";
+  const corpusId = typeof req.query.corpus === "string" ? req.query.corpus : undefined;
   try {
-    const response = await runSearch(q, source, config);
+    const response = await runSearch(q, source, config, corpusId);
     if (!response.ok) {
       return res.status(400).json(response);
     }
@@ -108,8 +116,9 @@ app.get("/api/search", async (req: Request, res: Response) => {
 app.post("/api/semantic-search", async (req: Request, res: Response) => {
   const q = typeof req.body?.query === "string" ? req.body.query : "";
   const numResults = Number(req.body?.numResults ?? 10);
+  const corpusId = typeof req.body?.corpus === "string" ? req.body.corpus : undefined;
   try {
-    const response = await runSemanticSearch(q, numResults, forwardedUserToken(req), config);
+    const response = await runSemanticSearch(q, numResults, forwardedUserToken(req), config, corpusId);
     if (!response.ok) {
       return res.status(response.error?.startsWith("No user authentication token") ? 401 : 400).json(response);
     }

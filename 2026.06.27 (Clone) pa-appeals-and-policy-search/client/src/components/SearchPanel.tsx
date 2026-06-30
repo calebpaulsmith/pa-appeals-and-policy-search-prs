@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import type { SearchMode } from "../types";
+import type { Corpus, SearchMode } from "../types";
 import { AdvancedHelp } from "./AdvancedHelp";
+import { CorpusSelector } from "./CorpusSelector";
 import { PilotBoundaries } from "./PilotBoundaries";
 
 const HISTORY_KEY = "pa-search-history";
@@ -12,6 +13,9 @@ interface Props {
   mode: SearchMode;
   example?: string;
   boundaries?: string;
+  corpora: Corpus[];
+  selectedCorpus: string;
+  onCorpusChange: (id: string) => void;
   onModeChange: (mode: SearchMode) => void;
   onSubmit: (q: string, mode: SearchMode) => void;
   onClear: () => void;
@@ -20,12 +24,12 @@ interface Props {
 const MODES: Array<{ id: SearchMode; label: string; hint: string }> = [
   {
     id: "deterministic",
-    label: "Exact words",
+    label: "Deterministic",
     hint: "Finds your exact terms. Supports quotes, AND/OR/NOT, wildcards, and proximity.",
   },
   {
     id: "semantic",
-    label: "By meaning",
+    label: "Semantic",
     hint: "Finds passages about the same idea, even when the wording differs.",
   },
 ];
@@ -35,6 +39,9 @@ export function SearchPanel({
   searching,
   mode,
   boundaries,
+  corpora,
+  selectedCorpus,
+  onCorpusChange,
   onModeChange,
   onSubmit,
   onClear,
@@ -120,6 +127,12 @@ export function SearchPanel({
           ))}
         </div>
         {activeHint && <p className="mode-hint">{activeHint}</p>}
+
+        <CorpusSelector
+          corpora={corpora}
+          selected={selectedCorpus}
+          onChange={onCorpusChange}
+        />
 
         <div className="query-wrap">
           <textarea

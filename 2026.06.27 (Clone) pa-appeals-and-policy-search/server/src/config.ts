@@ -13,6 +13,13 @@ dotenv.config();
 
 export type AppMode = "demo" | "pilot" | "production";
 
+export interface Corpus {
+  id: string;
+  displayName: string;
+  chunksTableFqn: string;
+  vsIndexName: string;
+}
+
 export interface AppConfig {
   mode: AppMode;
   appealsVolumePath: string; // "" in demo mode
@@ -39,6 +46,8 @@ export interface AppConfig {
   // the forwarded user token usually lacks the `jobs` OAuth scope; ingestion is
   // expected to run via a scheduled processor pipeline instead.
   enableJobTrigger: boolean;
+  // Searchable corpora (config-driven; currently one corpus derived from VS index)
+  corpora: Corpus[];
   // hard caps
   maxCandidatePages: number;
   maxResults: number;
@@ -87,6 +96,16 @@ function deriveChunksTable(vsIndexName: string): string {
   const name = (vsIndexName || "").trim();
   if (!name) return "";
   return name.replace(/_index$/, "");
+}
+
+/**
+ * Derive a stable corpus ID from a fully-qualified chunks table name.
+ * `cat.schema.pa_appeals_chunks_vs` → `pa_appeals`
+ */
+function deriveCorpusId(chunksTableFqn: string): string {
+  if (!chunksTableFqn) return "default";
+  const table = chunksTableFqn.split(".").pop() ?? "default";
+  return table.replace(/_chunks.*$/, "").replace(/_vs$/, "") || "default";
 }
 
 let cached: AppConfig | null = null;
@@ -140,6 +159,20 @@ export function getConfig(): AppConfig {
     mode = pilotOrProd;
   }
 
+  // Build the corpus list from the primary configured index. Additional corpora
+  // can be added later via a CORPORA env var (JSON array) without schema changes.
+  const corpusDisplayName = (process.env.CORPUS_DISPLAY_NAME || "PA Appeals").trim();
+  const primaryCorpus: Corpus | null =
+    chunksTableFqn
+      ? {
+          id: deriveCorpusId(chunksTableFqn),
+          displayName: corpusDisplayName,
+          chunksTableFqn,
+          vsIndexName,
+        }
+      : null;
+  const corpora: Corpus[] = primaryCorpus ? [primaryCorpus] : [];
+
   cached = {
     mode,
     appealsVolumePath: volumeConfigured ? appealsVolumePath : "",
@@ -159,6 +192,7 @@ export function getConfig(): AppConfig {
     hasWarehouse,
     adminUsers,
     enableJobTrigger: (process.env.ENABLE_JOB_TRIGGER || "").trim().toLowerCase() === "true",
+    corpora,
     maxCandidatePages: Number(process.env.MAX_CANDIDATE_PAGES || 2000),
     maxResults: Number(process.env.MAX_RESULTS || 100),
   };
