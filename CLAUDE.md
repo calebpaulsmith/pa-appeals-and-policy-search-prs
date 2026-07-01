@@ -282,11 +282,18 @@ FEMA-branded **FEMA Advanced Search** tool. This section is the living plan.
 
 - **Phase 1 — FEMA design system + chrome** (DONE): rename, palette, Merriweather,
   wordmark, Deterministic/Semantic labels, Disclaimer + `GET /api/last-upload`.
-- **Phase 2 — Usage counter**: Deterministic/Semantic search totals since a start
-  date, shown small at the bottom. **Stored as JSON in a Volume** (not a table):
-  `tws_ro_region5.rcd.advanced_search_data`. App service principal needs WRITE.
-- **Phase 3 — Corpus selector**: multi-select (checkmarks) filtering both search
-  modes; results show corpus name. Config-driven corpora.
+- **Phase 2 — Usage counter** (CODE DONE, persistence pending grant): Deterministic
+  /Semantic search totals, shown small in the footer. In-memory during the process
+  lifetime; **debounce-flushed as JSON to a Volume** (not a table) set via the
+  `USAGE_COUNTER_DIR` env var (e.g. `/Volumes/tws_ro_region5/rcd/advanced_search_data`).
+  Endpoints: `GET /api/usage`; counts increment on successful `/api/search` and
+  `/api/semantic-search`. Degrades gracefully to in-memory-only (resets on restart)
+  when `USAGE_COUNTER_DIR` is unset or the SP lacks WRITE VOLUME — a later restart
+  after the grant re-enables persistence. `snapshot().persisted` reports which mode
+  is active.
+- **Phase 3 — Corpus selector** (DONE): config-driven corpora; single corpus shows a
+  static label, multiple show pills + "All"; `GET /api/corpora`; both search modes
+  accept a `corpus` param; results carry corpus name when multi-corpus.
 - **Phase 4 — Ledger tab**: per-corpus file list (not chunks) from the chunks
   table joined with the volume listing; each row opens its source PDF in the
   viewer, which is shown only when a file is selected.
