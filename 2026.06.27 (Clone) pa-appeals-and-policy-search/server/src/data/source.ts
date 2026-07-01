@@ -24,6 +24,20 @@ export interface IndexStats {
   lastIndexedAt: string;
 }
 
+/** One file in the corpus ledger (a document, not a chunk/page). */
+export interface LedgerEntry {
+  documentId: string;
+  fileName: string;
+  /** Folder/relative path within the volume, or the filename when unknown. */
+  relativePath: string;
+  pageCount: number;
+  chunkCount: number;
+  /** Bytes; null when the volume is unconfigured or unreadable by the app SP. */
+  fileSize: number | null;
+  /** ISO timestamp; null when the volume is unconfigured or unreadable. */
+  modifiedAt: string | null;
+}
+
 export interface IndexSource {
   readonly kind: "demo" | "sql";
   stats(): Promise<IndexStats>;
@@ -34,6 +48,8 @@ export interface IndexSource {
    */
   fetchCandidatePages(literals: string[], limit: number): Promise<PageRow[]>;
   getDocument(documentId: string): Promise<DocumentRow | null>;
+  /** List every document in the corpus (for the ledger tab), capped at `limit`. */
+  listDocuments(limit: number): Promise<LedgerEntry[]>;
   /** Demo-only: synthesize a PDF for a fabricated document. Returns null otherwise. */
   getDemoPdf?(documentId: string): Promise<Buffer | null>;
 }

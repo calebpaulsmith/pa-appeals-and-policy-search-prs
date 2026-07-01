@@ -9,7 +9,8 @@
 
 import type { DBSQLClient as DBSQLClientType } from "@databricks/sql";
 import type { AppConfig } from "../config";
-import type { DocumentRow, IndexSource, IndexStats, PageRow } from "./source";
+import { statPdf } from "../pdf/volumeIndex";
+import type { DocumentRow, IndexSource, IndexStats, LedgerEntry, PageRow } from "./source";
 
 const IDENT_RE = /^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+){0,2}$/;
 
@@ -148,6 +149,32 @@ export class SqlSource implements IndexSource {
       volumePath: r.volume_path ?? "",
       pageCount: Number(r.page_count ?? 0),
     };
+  }
+
+  async listDocuments(limit: number): Promise<LedgerEntry[]> {
+    const cap = Math.max(1, Math.floor(limit));
+    const sql =
+      `SELECT document_id, file_name, relative_path, page_count ` +
+      `FROM ${this.docsFqn} ORDER BY file_name LIMIT ${cap}`;
+    const rows = await this.query<{
+      document_id: string;
+      file_name: string;
+      relative_path: string | null;
+      page_count: number | bigint | null;
+    }>(sql);
+    return rows.map((r) => {
+      const fileName = String(r.file_name);
+      const stat = statPdf(this.config.appealsVolumePath, fileName);
+      return {
+        documentId: String(r.document_id),
+        fileName,
+        relativePath: r.relative_path ?? stat?.relativePath ?? fileName,
+        pageCount: Number(r.page_count ?? 0),
+        chunkCount: 0,
+        fileSize: stat?.size ?? null,
+        modifiedAt: stat?.modifiedAt ?? null,
+      };
+    });
   }
 }
 

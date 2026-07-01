@@ -20,9 +20,10 @@ import { ResultsList } from "./components/ResultsList";
 import { PdfReader } from "./components/PdfReader";
 import { StatusBar } from "./components/StatusBar";
 import { AdminPanel } from "./components/AdminPanel";
+import { LedgerPanel } from "./components/LedgerPanel";
 import { UsageFooter } from "./components/UsageFooter";
 
-type AppTab = "search" | "admin";
+type AppTab = "search" | "ledger" | "admin";
 
 interface Selection {
   documentId: string;
@@ -197,6 +198,13 @@ export function App() {
         >
           Search
         </button>
+        <button
+          type="button"
+          className={activeTab === "ledger" ? "active" : ""}
+          onClick={() => setActiveTab("ledger")}
+        >
+          Ledger
+        </button>
         {isAdmin && (
           <button
             type="button"
@@ -208,7 +216,7 @@ export function App() {
         )}
       </nav>
 
-      {activeTab === "search" ? (
+      {activeTab === "search" && (
         <main className="panels">
           <section className="panel panel-left" aria-label="Search controls">
             <SearchPanel
@@ -246,7 +254,15 @@ export function App() {
             />
           </section>
         </main>
-      ) : (
+      )}
+
+      {activeTab === "ledger" && (
+        <main className="ledger-main">
+          <LedgerPanel corpora={corpora} selectedCorpus={selectedCorpus} />
+        </main>
+      )}
+
+      {activeTab === "admin" && (
         <main className="admin-main">
           <AdminPanel />
         </main>

@@ -3,6 +3,7 @@ import type {
   AdminStats,
   Corpus,
   LastUpload,
+  LedgerResponse,
   SearchResponse,
   StatusResponse,
   UsageSnapshot,
@@ -26,6 +27,14 @@ export async function fetchUsage(): Promise<UsageSnapshot | null> {
 export async function fetchLastUpload(): Promise<LastUpload> {
   const res = await fetch("/api/last-upload");
   return (await res.json()) as LastUpload;
+}
+
+export async function fetchLedger(corpusId?: string): Promise<LedgerResponse> {
+  const params = new URLSearchParams();
+  if (corpusId && corpusId !== "all") params.set("corpus", corpusId);
+  const qs = params.toString();
+  const res = await fetch(`/api/ledger${qs ? `?${qs}` : ""}`);
+  return (await res.json()) as LedgerResponse;
 }
 
 export async function fetchCorpora(): Promise<Corpus[]> {

@@ -21,8 +21,8 @@
 import type { DBSQLClient as DBSQLClientType } from "@databricks/sql";
 import type { AppConfig } from "../config";
 import { normalizePlain } from "../search/normalize";
-import { findPdfByBasename } from "../pdf/volumeIndex";
-import type { DocumentRow, IndexSource, IndexStats, PageRow } from "./source";
+import { findPdfByBasename, statPdf } from "../pdf/volumeIndex";
+import type { DocumentRow, IndexSource, IndexStats, LedgerEntry, PageRow } from "./source";
 
 const IDENT_RE = /^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+){0,2}$/;
 
@@ -78,6 +78,20 @@ export function buildCandidateSql(chunksFqn: string, clause: string, cap: number
 }
 
 /**
+ * Ledger SQL: one row per document (filename), with page count and chunk count
+ * derived from the chunks table. No user input is interpolated; `cap` is a
+ * validated integer.
+ */
+export function buildLedgerSql(chunksFqn: string, cap: number): string {
+  return (
+    `SELECT filename AS filename, MAX(page_number) AS page_count, ` +
+    `COUNT(*) AS chunk_count ` +
+    `FROM ${chunksFqn} ` +
+    `GROUP BY filename ORDER BY filename LIMIT ${Math.max(1, Math.floor(cap))}`
+  );
+}
+
+/**
  * Resolve a corpus filename (a bare basename) to an absolute path under the
  * approved volume root. PDFs are nested by era/year, so we first look the
  * basename up in the recursively-built volume index; if that finds nothing we
@@ -126,7 +140,8 @@ export class ChunksSqlSource implements IndexSource {
 
   private async query<T = Record<string, unknown>>(
     sql: string,
-    namedParameters: Record<string, string | number> = {}
+    namedParameters: Record<string, string | number> = {},
+    maxRows = this.config.maxCandidatePages + 16
   ): Promise<T[]> {
     const client = await this.getClient();
     const session = await client.openSession();
@@ -134,7 +149,7 @@ export class ChunksSqlSource implements IndexSource {
       const op = await session.executeStatement(sql, {
         runAsync: true,
         namedParameters,
-        maxRows: this.config.maxCandidatePages + 16,
+        maxRows,
       });
       const rows = (await op.fetchAll()) as T[];
       await op.close();
@@ -201,5 +216,28 @@ export class ChunksSqlSource implements IndexSource {
       volumePath: resolveChunkVolumePath(this.config.appealsVolumePath, fileName),
       pageCount: Number(r.page_count ?? 0),
     };
+  }
+
+  async listDocuments(limit: number): Promise<LedgerEntry[]> {
+    const sql = buildLedgerSql(this.chunksFqn, limit);
+    const rows = await this.query<{
+      filename: string;
+      page_count: number | bigint | null;
+      chunk_count: number | bigint | null;
+    }>(sql, {}, Math.max(1, Math.floor(limit)) + 16);
+    return rows.map((r) => {
+      const fileName = String(r.filename);
+      // File size / mtime require READ VOLUME; null until the grant lands.
+      const stat = statPdf(this.config.appealsVolumePath, fileName);
+      return {
+        documentId: fileName,
+        fileName,
+        relativePath: stat?.relativePath ?? fileName,
+        pageCount: Number(r.page_count ?? 0),
+        chunkCount: Number(r.chunk_count ?? 0),
+        fileSize: stat?.size ?? null,
+        modifiedAt: stat?.modifiedAt ?? null,
+      };
+    });
   }
 }

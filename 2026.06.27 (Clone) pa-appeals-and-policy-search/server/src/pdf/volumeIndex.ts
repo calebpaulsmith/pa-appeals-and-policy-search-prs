@@ -91,6 +91,36 @@ export function clearVolumeIndexCache(volumeRoot?: string): void {
   else cache.clear();
 }
 
+export interface PdfStat {
+  /** Absolute path under the volume root. */
+  path: string;
+  /** Path relative to the volume root (e.g. "2009-2025/2018/foo.pdf"). */
+  relativePath: string;
+  size: number;
+  modifiedAt: string;
+}
+
+/**
+ * Resolve a basename to its path (via the cached scan) and stat it for size and
+ * last-modified. Returns null when the volume is unconfigured/unreadable or the
+ * file is missing — callers render those fields as unknown.
+ */
+export function statPdf(volumeRoot: string, basename: string): PdfStat | null {
+  const full = findPdfByBasename(volumeRoot, basename);
+  if (!full) return null;
+  try {
+    const st = fs.statSync(full);
+    return {
+      path: full,
+      relativePath: path.relative(volumeRoot, full),
+      size: st.size,
+      modifiedAt: new Date(st.mtimeMs).toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export interface NewestUpload {
   name: string;
   /** ISO timestamp of the file's last modification. */

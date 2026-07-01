@@ -4,6 +4,7 @@ import {
   assertIdentifier,
   buildCandidateSql,
   buildChunkLikeFilter,
+  buildLedgerSql,
   escapeLike,
   resolveChunkVolumePath,
 } from "./chunksSqlSource";
@@ -86,6 +87,22 @@ check("empty filename -> empty path", resolveChunkVolumePath("/Volumes/x", "") =
 check(
   "trailing slash on root handled",
   resolveChunkVolumePath("/Volumes/x/", "a.pdf") === "/Volumes/x/a.pdf"
+);
+
+// --- buildLedgerSql --------------------------------------------------------
+const ledgerSql = buildLedgerSql("cat.schema.chunks", 5000);
+check("ledger SQL groups by filename", ledgerSql.includes("GROUP BY filename"));
+check("ledger SQL selects page_count", ledgerSql.includes("MAX(page_number) AS page_count"));
+check("ledger SQL selects chunk_count", ledgerSql.includes("COUNT(*) AS chunk_count"));
+check("ledger SQL references the table", ledgerSql.includes("FROM cat.schema.chunks"));
+check("ledger SQL applies integer LIMIT", ledgerSql.includes("LIMIT 5000"));
+check(
+  "ledger SQL floors/guards non-integer cap",
+  buildLedgerSql("cat.schema.chunks", 12.9).includes("LIMIT 12")
+);
+check(
+  "ledger SQL clamps cap to at least 1",
+  buildLedgerSql("cat.schema.chunks", 0).includes("LIMIT 1")
 );
 
 console.log(`\n${passed} passed, ${failed} failed`);

@@ -120,6 +120,31 @@ app.get("/api/usage", (_req: Request, res: Response) => {
   res.json(usage.snapshot());
 });
 
+// Corpus ledger: the list of documents (files) in the corpus. File size and
+// last-modified come from the volume and are null until the app SP has READ
+// VOLUME — the UI shows a hint in that case. `corpus` is accepted for future
+// multi-corpus filtering; a single corpus returns all documents.
+app.get("/api/ledger", async (_req: Request, res: Response) => {
+  try {
+    const entries = await source.listDocuments(config.maxLedgerRows);
+    res.json({
+      ok: true,
+      entries,
+      volumeConfigured: !!config.appealsVolumePath,
+      truncated: entries.length >= config.maxLedgerRows,
+    });
+  } catch (err) {
+    res.status(502).json({
+      ok: false,
+      error: "Could not load the document ledger.",
+      detail: safeMessage(err),
+      entries: [],
+      volumeConfigured: !!config.appealsVolumePath,
+      truncated: false,
+    });
+  }
+});
+
 app.get("/api/search", async (req: Request, res: Response) => {
   const q = typeof req.query.q === "string" ? req.query.q : "";
   const corpusId = typeof req.query.corpus === "string" ? req.query.corpus : undefined;
