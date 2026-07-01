@@ -5,11 +5,22 @@ import type {
   LastUpload,
   SearchResponse,
   StatusResponse,
+  UsageSnapshot,
 } from "./types";
 
 export async function fetchStatus(): Promise<StatusResponse> {
   const res = await fetch("/api/status");
   return (await res.json()) as StatusResponse;
+}
+
+export async function fetchUsage(): Promise<UsageSnapshot | null> {
+  try {
+    const res = await fetch("/api/usage");
+    if (!res.ok) return null;
+    return (await res.json()) as UsageSnapshot;
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchLastUpload(): Promise<LastUpload> {

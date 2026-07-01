@@ -9,6 +9,13 @@ export interface Corpus {
   displayName: string;
 }
 
+export interface UsageSnapshot {
+  deterministic: number;
+  semantic: number;
+  total: number;
+  persisted: boolean;
+}
+
 export interface SnippetSegment {
   text: string;
   highlight: boolean;

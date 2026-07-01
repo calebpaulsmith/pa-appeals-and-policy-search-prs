@@ -1086,3 +1086,24 @@ body {
   color: #005288;
   border: 1px solid #c0d4e6;
 }
+
+/* ── Usage footer ────────────────────────────────────────── */
+.usage-footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 16px 14px;
+  margin-top: auto;
+  font-size: 11px;
+  color: var(--muted, #777);
+  border-top: 1px solid var(--border, #e2e2e2);
+}
+.usage-total {
+  font-weight: 600;
+  color: var(--fg, #444);
+}
+.usage-breakdown {
+  color: var(--muted, #888);
+}

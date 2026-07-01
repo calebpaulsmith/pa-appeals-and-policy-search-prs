@@ -48,6 +48,10 @@ export interface AppConfig {
   enableJobTrigger: boolean;
   // Searchable corpora (config-driven; currently one corpus derived from VS index)
   corpora: Corpus[];
+  // Directory (governed Volume) where the usage counter JSON is persisted. Empty
+  // when unconfigured — the counter then lives in memory only and resets on
+  // restart. Persisting requires the app SP to have WRITE VOLUME on this path.
+  usageCounterDir: string;
   // hard caps
   maxCandidatePages: number;
   maxResults: number;
@@ -173,6 +177,11 @@ export function getConfig(): AppConfig {
       : null;
   const corpora: Corpus[] = primaryCorpus ? [primaryCorpus] : [];
 
+  // Where to persist the usage counter. Accepts an explicit dir, or derives one
+  // from the advanced_search_data volume convention if only the catalog/schema
+  // are known. Only used when it points at a /Volumes/ path the SP can write.
+  const usageCounterDir = (process.env.USAGE_COUNTER_DIR || "").trim();
+
   cached = {
     mode,
     appealsVolumePath: volumeConfigured ? appealsVolumePath : "",
@@ -193,6 +202,7 @@ export function getConfig(): AppConfig {
     adminUsers,
     enableJobTrigger: (process.env.ENABLE_JOB_TRIGGER || "").trim().toLowerCase() === "true",
     corpora,
+    usageCounterDir,
     maxCandidatePages: Number(process.env.MAX_CANDIDATE_PAGES || 2000),
     maxResults: Number(process.env.MAX_RESULTS || 100),
   };

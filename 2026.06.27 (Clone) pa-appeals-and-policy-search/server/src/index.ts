@@ -18,9 +18,11 @@ import {
   triggerRefresh,
 } from "./admin/databricksAdmin";
 import { requireAdmin, isCallerAdmin } from "./admin/adminAuth";
+import { getUsageCounter } from "./usage/usageCounter";
 
 const config = getConfig();
 const source = createSource(config);
+const usage = getUsageCounter(config.usageCounterDir);
 const app = express();
 
 app.disable("x-powered-by");
@@ -112,6 +114,12 @@ app.get("/api/last-upload", (_req: Request, res: Response) => {
   }
 });
 
+// Aggregate search counts (deterministic + semantic). Non-sensitive; powers the
+// small usage line in the footer.
+app.get("/api/usage", (_req: Request, res: Response) => {
+  res.json(usage.snapshot());
+});
+
 app.get("/api/search", async (req: Request, res: Response) => {
   const q = typeof req.query.q === "string" ? req.query.q : "";
   const corpusId = typeof req.query.corpus === "string" ? req.query.corpus : undefined;
@@ -120,6 +128,7 @@ app.get("/api/search", async (req: Request, res: Response) => {
     if (!response.ok) {
       return res.status(400).json(response);
     }
+    usage.increment("deterministic");
     res.json(response);
   } catch (err) {
     res.status(500).json({
@@ -141,6 +150,7 @@ app.post("/api/semantic-search", async (req: Request, res: Response) => {
     if (!response.ok) {
       return res.status(response.error?.startsWith("No user authentication token") ? 401 : 400).json(response);
     }
+    usage.increment("semantic");
     res.json(response);
   } catch (err) {
     res.status(502).json({
@@ -296,3 +306,11 @@ app.listen(port, () => {
     `[pa-appeals-and-policy-search] listening on :${port} — mode=${config.mode}, source=${source.kind}`
   );
 });
+
+// Persist any pending usage counts before the container is reclaimed.
+for (const signal of ["SIGTERM", "SIGINT"] as const) {
+  process.on(signal, () => {
+    usage.flush();
+    process.exit(0);
+  });
+}

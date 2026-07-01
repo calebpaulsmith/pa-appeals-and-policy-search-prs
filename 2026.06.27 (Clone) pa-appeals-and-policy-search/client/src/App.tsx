@@ -5,13 +5,22 @@ import {
   fetchSearch,
   fetchSemanticSearch,
   fetchStatus,
+  fetchUsage,
 } from "./api";
-import type { Corpus, SearchMode, SearchResponse, SearchResult, StatusResponse } from "./types";
+import type {
+  Corpus,
+  SearchMode,
+  SearchResponse,
+  SearchResult,
+  StatusResponse,
+  UsageSnapshot,
+} from "./types";
 import { SearchPanel } from "./components/SearchPanel";
 import { ResultsList } from "./components/ResultsList";
 import { PdfReader } from "./components/PdfReader";
 import { StatusBar } from "./components/StatusBar";
 import { AdminPanel } from "./components/AdminPanel";
+import { UsageFooter } from "./components/UsageFooter";
 
 type AppTab = "search" | "admin";
 
@@ -56,6 +65,7 @@ export function App() {
   const [searching, setSearching] = useState(false);
   const [corpora, setCorpora] = useState<Corpus[]>([]);
   const [selectedCorpus, setSelectedCorpus] = useState<string>("all");
+  const [usage, setUsage] = useState<UsageSnapshot | null>(null);
   const [selection, setSelection] = useState<Selection | null>(
     initial.current.doc
       ? {
@@ -80,6 +90,7 @@ export function App() {
         if (list.length === 1) setSelectedCorpus(list[0].id);
       })
       .catch(() => setCorpora([]));
+    fetchUsage().then(setUsage).catch(() => setUsage(null));
   }, []);
 
   useEffect(() => {
@@ -109,6 +120,8 @@ export function App() {
         });
       } finally {
         setSearching(false);
+        // Reflect the just-counted search in the footer.
+        fetchUsage().then(setUsage).catch(() => undefined);
       }
     },
     []
@@ -238,6 +251,8 @@ export function App() {
           <AdminPanel />
         </main>
       )}
+
+      <UsageFooter usage={usage} />
     </div>
   );
 }
