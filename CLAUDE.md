@@ -294,9 +294,13 @@ FEMA-branded **FEMA Advanced Search** tool. This section is the living plan.
 - **Phase 3 — Corpus selector** (DONE): config-driven corpora; single corpus shows a
   static label, multiple show pills + "All"; `GET /api/corpora`; both search modes
   accept a `corpus` param; results carry corpus name when multi-corpus.
-- **Phase 4 — Ledger tab**: per-corpus file list (not chunks) from the chunks
-  table joined with the volume listing; each row opens its source PDF in the
-  viewer, which is shown only when a file is selected.
+- **Phase 4 — Ledger tab** (CODE DONE, volume metadata pending grant): per-corpus
+  file list (not chunks) — one row per document from the chunks table (filename,
+  page count, chunk count), enriched with **file size + last-modified + folder from
+  the volume listing** when the app SP can read it. `GET /api/ledger`; each row
+  opens its source PDF in the viewer, shown only when a file is selected; a filter
+  box narrows by name/folder. Size/modified render as "—" with an inline hint until
+  `READ VOLUME` is granted (`MAX_LEDGER_ROWS` caps rows, default 5000).
 - **Future (not now)**: translate corpus content to Spanish. Keep the data model
   translation-ready (a `language` dimension) for a clean future add.
 

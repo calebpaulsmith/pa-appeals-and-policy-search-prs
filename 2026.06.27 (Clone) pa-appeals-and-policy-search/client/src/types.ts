@@ -16,6 +16,24 @@ export interface UsageSnapshot {
   persisted: boolean;
 }
 
+export interface LedgerEntry {
+  documentId: string;
+  fileName: string;
+  relativePath: string;
+  pageCount: number;
+  chunkCount: number;
+  fileSize: number | null;
+  modifiedAt: string | null;
+}
+
+export interface LedgerResponse {
+  ok: boolean;
+  error?: string;
+  entries: LedgerEntry[];
+  volumeConfigured: boolean;
+  truncated: boolean;
+}
+
 export interface SnippetSegment {
   text: string;
   highlight: boolean;

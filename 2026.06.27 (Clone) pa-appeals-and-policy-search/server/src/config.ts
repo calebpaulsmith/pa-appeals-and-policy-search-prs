@@ -55,6 +55,7 @@ export interface AppConfig {
   // hard caps
   maxCandidatePages: number;
   maxResults: number;
+  maxLedgerRows: number;
 }
 
 interface YamlConfig {
@@ -205,6 +206,7 @@ export function getConfig(): AppConfig {
     usageCounterDir,
     maxCandidatePages: Number(process.env.MAX_CANDIDATE_PAGES || 2000),
     maxResults: Number(process.env.MAX_RESULTS || 100),
+    maxLedgerRows: Number(process.env.MAX_LEDGER_ROWS || 5000),
   };
   return cached;
 }

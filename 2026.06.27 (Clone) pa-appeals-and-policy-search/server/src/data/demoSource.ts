@@ -2,7 +2,7 @@
 
 import { normalizePlain } from "../search/normalize";
 import { DEMO_DOCUMENTS, demoStats } from "./demoData";
-import type { DocumentRow, IndexSource, IndexStats, PageRow } from "./source";
+import type { DocumentRow, IndexSource, IndexStats, LedgerEntry, PageRow } from "./source";
 import { renderDemoPdf } from "../pdf/demoPdf";
 
 export class DemoSource implements IndexSource {
@@ -43,6 +43,25 @@ export class DemoSource implements IndexSource {
       volumePath: "", // demo documents have no real volume path
       pageCount: doc.pages.length,
     };
+  }
+
+  async listDocuments(limit: number): Promise<LedgerEntry[]> {
+    // Deterministic fabricated metadata so the demo ledger looks realistic
+    // without touching a filesystem: size scales with text length, dates step
+    // back a day per document from a fixed anchor.
+    const anchor = Date.UTC(2026, 5, 20); // 2026-06-20
+    return DEMO_DOCUMENTS.slice(0, limit).map((doc, i) => {
+      const textBytes = doc.pages.reduce((n, p) => n + p.text.length, 0);
+      return {
+        documentId: doc.documentId,
+        fileName: doc.fileName,
+        relativePath: doc.relativePath,
+        pageCount: doc.pages.length,
+        chunkCount: doc.pages.length, // one chunk per page in the demo
+        fileSize: 40_000 + textBytes * 12,
+        modifiedAt: new Date(anchor - i * 86_400_000).toISOString(),
+      };
+    });
   }
 
   async getDemoPdf(documentId: string): Promise<Buffer | null> {

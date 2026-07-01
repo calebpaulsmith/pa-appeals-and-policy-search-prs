@@ -1107,3 +1107,159 @@ body {
 .usage-breakdown {
   color: var(--muted, #888);
 }
+
+/* ── Ledger tab ──────────────────────────────────────────── */
+.ledger-main {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  overflow: hidden;
+}
+.ledger {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  height: 100%;
+  min-height: 0;
+}
+.ledger--reading {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+}
+.ledger-list-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e2e2e2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.ledger-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border, #eee);
+}
+.ledger-head h2 {
+  margin: 0 0 2px;
+  font-size: 16px;
+}
+.ledger-filter {
+  min-width: 220px;
+  padding: 7px 10px;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.ledger-note {
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 12px;
+  color: var(--danger, #8a1020);
+  background: #fbeef0;
+  border-bottom: 1px solid #f0d6db;
+}
+.ledger-note code {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.ledger-table-wrap {
+  overflow: auto;
+  min-height: 0;
+}
+.ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.ledger-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  padding: 8px 12px;
+  background: var(--surface-2, #f5f8fa);
+  border-bottom: 1px solid var(--border, #e2e2e2);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted, #666);
+  white-space: nowrap;
+}
+.ledger-table th.num,
+.ledger-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ledger-table tbody tr {
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-light, #f0f0f0);
+}
+.ledger-table tbody tr:hover {
+  background: var(--surface-2, #f5f8fa);
+}
+.ledger-table tbody tr.active {
+  background: var(--accent-soft, #d6e3ec);
+}
+.ledger-table tbody tr:focus-visible {
+  outline: 2px solid var(--accent, #005288);
+  outline-offset: -2px;
+}
+.ledger-table td {
+  padding: 8px 12px;
+  vertical-align: top;
+}
+.ledger-file {
+  font-weight: 500;
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ledger-folder {
+  color: var(--muted, #777);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ledger-empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: var(--muted, #777);
+}
+.ledger-reader-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e2e2e2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.ledger-reader-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border, #eee);
+}
+.ledger-reader-title {
+  font-weight: 600;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .ledger--reading {
+    grid-template-columns: 1fr;
+  }
+}
